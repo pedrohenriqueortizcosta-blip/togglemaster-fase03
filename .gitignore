@@ -1,0 +1,39 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+**/secret.yaml
+**/*Secret*.yaml
+kubeconfig
+*.pem
+*.key
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Go
+**/vendor/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
