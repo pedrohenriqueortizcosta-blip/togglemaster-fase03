@@ -136,3 +136,11 @@ resource "aws_eks_addon" "kube_proxy" {
   addon_name   = "kube-proxy"
   depends_on   = [aws_eks_node_group.general]
 }
+
+# Needed for the evaluation-service HorizontalPodAutoscaler to actually
+# scale on CPU utilization.
+resource "aws_eks_addon" "metrics_server" {
+  cluster_name = aws_eks_cluster.this.name
+  addon_name   = "metrics-server"
+  depends_on   = [aws_eks_node_group.general]
+}
