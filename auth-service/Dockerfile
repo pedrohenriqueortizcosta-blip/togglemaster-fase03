@@ -1,5 +1,5 @@
 # Stage 1 (BUILD)
-FROM golang:1.21.13-alpine AS builder
+FROM golang:1.25.7-alpine AS builder
 WORKDIR /app
 RUN apk add --no-cache git
 COPY go.mod ./
