@@ -1,0 +1,184 @@
+name: flag-service CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "flag-service/**"
+      - ".github/workflows/flag-service-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "flag-service/**"
+      - ".github/workflows/flag-service-ci.yml"
+
+permissions:
+  contents: read
+
+env:
+  SERVICE_NAME: flag-service
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build-test:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flag-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: flag-service/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile check
+        run: python -m compileall -q .
+
+      # pytest exits 5 (failure) when zero tests are collected, unlike `go
+      # test` which exits 0 — so this project has no tests yet, skip gracefully
+      # instead of treating "no tests" as a pipeline failure.
+      - name: Unit tests
+        run: |
+          if find . -name "test_*.py" -o -name "*_test.py" | grep -q .; then
+            pip install pytest
+            pytest -v
+          else
+            echo "No test files found, skipping"
+          fi
+
+  lint:
+    name: Linter / Static Analysis
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flag-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: flake8
+        run: flake8 . --max-line-length=120 --extend-ignore=E203,W503
+
+  security-scan:
+    name: "Security Scan (SAST & SCA)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    defaults:
+      run:
+        working-directory: flag-service
+    steps:
+      - uses: actions/checkout@v4
+
+      # SCA: known vulnerabilities in dependencies (requirements.txt)
+      - name: Trivy SCA (filesystem scan)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: flag-service
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      # SAST: vulnerabilities/bad patterns in our own source code.
+      # -lll restricts both the report AND the exit code to HIGH severity
+      # only — bandit's practical equivalent of the "fail on critical" rule.
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: bandit (fails on HIGH severity)
+        run: bandit -r . -lll
+
+  docker-build-push:
+    name: Docker Build & Push
+    needs: [build-test, lint, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image_tag: ${{ steps.vars.outputs.image_tag }}
+      registry: ${{ steps.ecr-login.outputs.registry }}
+    defaults:
+      run:
+        working-directory: flag-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image tag
+        id: vars
+        run: echo "image_tag=v1.0.0-$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Configure AWS credentials (OIDC, no static keys)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build image
+        run: |
+          docker build -t "${{ steps.ecr-login.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ steps.vars.outputs.image_tag }}" .
+
+      - name: Trivy image scan (fail on CRITICAL, before pushing)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: "${{ steps.ecr-login.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ steps.vars.outputs.image_tag }}"
+          severity: CRITICAL
+          exit-code: "1"
+          ignore-unfixed: true
+
+      - name: Push image
+        run: |
+          docker push "${{ steps.ecr-login.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ steps.vars.outputs.image_tag }}"
+
+  update-gitops:
+    name: Update GitOps manifest
+    needs: docker-build-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Bump image tag in gitops manifest
+        run: |
+          NEW_IMAGE="${{ needs.docker-build-push.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ needs.docker-build-push.outputs.image_tag }}"
+          sed -i "s#image: .*${{ env.SERVICE_NAME }}:.*#image: ${NEW_IMAGE}#" gitops/${{ env.SERVICE_NAME }}/deployment.yaml
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gitops/${{ env.SERVICE_NAME }}/deployment.yaml
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "ci: bump ${{ env.SERVICE_NAME }} image to ${{ needs.docker-build-push.outputs.image_tag }}"
+            git pull --rebase origin main
+            git push
+          fi
