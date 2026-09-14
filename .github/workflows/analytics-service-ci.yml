@@ -84,7 +84,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Trivy SCA (filesystem scan)
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: analytics-service
@@ -134,7 +134,7 @@ jobs:
           docker build -t "${{ steps.ecr-login.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ steps.vars.outputs.image_tag }}" .
 
       - name: Trivy image scan (fail on CRITICAL, before pushing)
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: "${{ steps.ecr-login.outputs.registry }}/${{ env.SERVICE_NAME }}:${{ steps.vars.outputs.image_tag }}"
