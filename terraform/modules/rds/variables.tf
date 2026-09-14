@@ -31,7 +31,7 @@ variable "private_subnet_ids" {
   type = list(string)
 }
 
-variable "allowed_security_group_ids" {
-  description = "Security groups allowed to reach Postgres on 5432 (e.g. the EKS cluster security group)."
-  type        = list(string)
+variable "allowed_security_group_id" {
+  description = "Security group allowed to reach Postgres on 5432 (the EKS cluster security group)."
+  type        = string
 }

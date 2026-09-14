@@ -46,9 +46,9 @@ module "rds" {
   allocated_storage = var.rds_allocated_storage
   engine_version    = var.rds_engine_version
 
-  vpc_id                     = module.networking.vpc_id
-  private_subnet_ids         = module.networking.private_subnet_ids
-  allowed_security_group_ids = [module.eks.cluster_security_group_id]
+  vpc_id                    = module.networking.vpc_id
+  private_subnet_ids        = module.networking.private_subnet_ids
+  allowed_security_group_id = module.eks.cluster_security_group_id
 }
 
 # ---------------------------------------------------------------------------
@@ -60,9 +60,9 @@ module "elasticache" {
   project_name = var.project_name
   node_type    = var.redis_node_type
 
-  vpc_id                     = module.networking.vpc_id
-  private_subnet_ids         = module.networking.private_subnet_ids
-  allowed_security_group_ids = [module.eks.cluster_security_group_id]
+  vpc_id                    = module.networking.vpc_id
+  private_subnet_ids        = module.networking.private_subnet_ids
+  allowed_security_group_id = module.eks.cluster_security_group_id
 }
 
 # ---------------------------------------------------------------------------

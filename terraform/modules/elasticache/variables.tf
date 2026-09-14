@@ -14,6 +14,7 @@ variable "private_subnet_ids" {
   type = list(string)
 }
 
-variable "allowed_security_group_ids" {
-  type = list(string)
+variable "allowed_security_group_id" {
+  description = "Security group allowed to reach Redis on 6379 (the EKS cluster security group)."
+  type        = string
 }
