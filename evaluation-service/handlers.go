@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 type EvaluationResponse struct {
@@ -12,10 +13,18 @@ type EvaluationResponse struct {
 	Result   bool   `json:"result"`
 }
 
+// flagNamePattern restricts flag_name to a safe allow-list before it is used
+// to build outbound request paths to flag-service/targeting-service in
+// evaluator.go, closing the SSRF-adjacent path/URL injection gosec flags
+// (G704) at fetchFlag/fetchRule.
+var flagNamePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,100}$`)
+
 func (a *App) healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "ok"}); err != nil {
+		log.Printf("erro ao codificar resposta: %v", err)
+	}
 }
 
 func (a *App) evaluationHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,6 +36,11 @@ func (a *App) evaluationHandler(w http.ResponseWriter, r *http.Request) {
 
 	if userID == "" || flagName == "" {
 		http.Error(w, `{"error": "user_id e flag_name são obrigatórios"}`, http.StatusBadRequest)
+		return
+	}
+
+	if !flagNamePattern.MatchString(flagName) {
+		http.Error(w, `{"error": "flag_name inválido"}`, http.StatusBadRequest)
 		return
 	}
 
@@ -50,9 +64,11 @@ func (a *App) evaluationHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 4. Retornar a resposta
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(EvaluationResponse{
+	if err := json.NewEncoder(w).Encode(EvaluationResponse{
 		FlagName: flagName,
 		UserID:   userID,
 		Result:   result,
-	})
+	}); err != nil {
+		log.Printf("erro ao codificar resposta: %v", err)
+	}
 }
