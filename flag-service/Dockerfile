@@ -7,6 +7,11 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # Stage 2 (RUN)
 FROM python:3.12-slim
 
+# Patch OS packages at build time rather than trusting the upstream base
+# image tag to already be freshly rebuilt (Debian security fixes land
+# ahead of Docker Hub's next scheduled image rebuild).
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 RUN adduser --disabled-password --gecos "" appuser
 WORKDIR /app
 
