@@ -29,7 +29,11 @@ data "aws_iam_policy_document" "trust" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:*"]
+      # GitHub's OIDC sub claim can append immutable numeric IDs to the owner
+      # and repo names (e.g. "owner@123/repo@456:ref:...") instead of the
+      # classic "owner/repo:ref:..." form — the trailing "*" on each segment
+      # tolerates that optional "@<id>" suffix either way.
+      values = ["repo:${split("/", var.github_repository)[0]}*/${split("/", var.github_repository)[1]}*:*"]
     }
   }
 }
