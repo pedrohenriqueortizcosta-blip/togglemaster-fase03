@@ -1,0 +1,625 @@
+<title>ToggleMaster Demo Runbook</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --paper: #f6f4f0;
+    --paper-raised: #ffffff;
+    --ink: #1b1f1e;
+    --ink-soft: #565f5c;
+    --line: #ddd8ce;
+    --accent: #0f7a6c;
+    --accent-ink: #ffffff;
+    --accent-tint: #e2f0ec;
+    --amber: #9a6a12;
+    --amber-tint: #f6ecd8;
+    --critical: #a3281e;
+    --critical-tint: #fbe8e5;
+    --code-bg: #1e2321;
+    --code-ink: #eef2ef;
+    --code-line: #343b38;
+    --shadow: 0 1px 2px rgba(27,31,30,0.06), 0 8px 24px rgba(27,31,30,0.06);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #141716;
+      --paper-raised: #1b1f1d;
+      --ink: #ece9e2;
+      --ink-soft: #a5aca7;
+      --line: #333730;
+      --accent: #3fc4ae;
+      --accent-ink: #0a1613;
+      --accent-tint: #163530;
+      --amber: #e0b158;
+      --amber-tint: #362c17;
+      --critical: #e2685d;
+      --critical-tint: #3a1f1c;
+      --code-bg: #0e100f;
+      --code-ink: #e8ece9;
+      --code-line: #2a2f2c;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #141716;
+    --paper-raised: #1b1f1d;
+    --ink: #ece9e2;
+    --ink-soft: #a5aca7;
+    --line: #333730;
+    --accent: #3fc4ae;
+    --accent-ink: #0a1613;
+    --accent-tint: #163530;
+    --amber: #e0b158;
+    --amber-tint: #362c17;
+    --critical: #e2685d;
+    --critical-tint: #3a1f1c;
+    --code-bg: #0e100f;
+    --code-ink: #e8ece9;
+    --code-line: #2a2f2c;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    line-height: 1.55;
+    padding-inline: max(16px, calc((100vw - 760px) / 2));
+    padding-block: 32px 96px;
+  }
+
+  h1, h2, h3 { font-weight: 700; text-wrap: balance; letter-spacing: -0.01em; }
+
+  code, .mono, .cmd, .badge, .timebadge, .seg-num {
+    font-family: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  }
+
+  /* ---------- Header ---------- */
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 28px;
+  }
+  header.masthead .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle-dot {
+    width: 10px; height: 10px; border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-tint);
+  }
+  header.masthead h1 { font-size: 30px; margin: 0; }
+  header.masthead p.sub { color: var(--ink-soft); margin: 2px 0 0; font-size: 15.5px; max-width: 62ch; }
+
+  /* ---------- Progress rail ---------- */
+  nav.rail {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--line);
+    margin: 0 calc(-1 * max(16px, calc((100vw - 760px) / 2))) 28px;
+    padding: 10px max(16px, calc((100vw - 760px) / 2));
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  nav.rail a {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 7px;
+    text-decoration: none;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  nav.rail a:hover { background: var(--accent-tint); color: var(--ink); }
+  nav.rail a .n { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-weight: 600; }
+
+  /* ---------- Summary table ---------- */
+  .overview {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 18px 20px;
+    margin-bottom: 36px;
+  }
+  .overview h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); margin: 0 0 12px; }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 4px 14px;
+    font-size: 14.5px;
+  }
+  .overview-grid .n { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .overview-grid .t { font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .overview-total {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* ---------- Segment ---------- */
+  section.segment {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 26px 26px 22px;
+    margin-bottom: 22px;
+    scroll-margin-top: 64px;
+  }
+  section.segment.critical-beat { border-color: color-mix(in srgb, var(--critical) 35%, var(--line)); }
+
+  .segment-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .seg-num {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--accent-tint);
+    color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 600;
+  }
+  .segment-head h2 { font-size: 19px; margin: 2px 0 2px; }
+  .segment-head .meta { display: flex; gap: 10px; align-items: center; margin-top: 2px; }
+  .timebadge {
+    font-size: 12px; color: var(--ink-soft);
+    background: var(--accent-tint); color: var(--accent);
+    padding: 2px 8px; border-radius: 999px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .block { margin-top: 16px; }
+  .block-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    display: flex; align-items: center; gap: 6px;
+    margin-bottom: 8px;
+  }
+  .block-label .dot { width: 7px; height: 7px; border-radius: 999px; }
+  .show .dot { background: var(--accent); }
+  .say .dot { background: var(--amber); }
+
+  .show ul, .say ul { margin: 0; padding-left: 20px; }
+  .show li, .say li { margin-bottom: 5px; }
+  .say { background: var(--amber-tint); border-radius: 10px; padding: 12px 16px; }
+  .say p, .say li { color: var(--ink); }
+  .say .quote { font-style: italic; }
+
+  pre.term {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.6;
+    position: relative;
+    margin: 8px 0 0;
+  }
+  pre.term code { font-family: 'IBM Plex Mono', monospace; white-space: pre; }
+  .term-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .term-label { font-size: 11px; color: var(--code-ink); opacity: 0.55; letter-spacing: 0.04em; }
+  .copy-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    border: 1px solid var(--code-line);
+    color: var(--code-ink);
+    border-radius: 6px;
+    padding: 3px 9px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--code-line); }
+  .copy-btn:focus-visible, a:focus-visible, nav.rail a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .ci-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px; font-weight: 600;
+    padding: 3px 9px; border-radius: 5px;
+    color: #fff;
+  }
+  .ci-badge.pass { background: var(--accent); color: var(--accent-ink); }
+  .ci-badge.fail { background: var(--critical); }
+  .ci-badge.sync { background: var(--accent); color: var(--accent-ink); }
+
+  .callout {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--critical-tint);
+    border: 1px solid color-mix(in srgb, var(--critical) 30%, transparent);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 13.5px;
+  }
+  .callout strong { color: var(--critical); }
+
+  .fact {
+    background: var(--accent-tint);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 13.5px;
+  }
+  .fact strong { color: var(--accent); }
+
+  table.cve {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  table.cve th, table.cve td {
+    border: 1px solid var(--code-line);
+    padding: 5px 8px;
+    text-align: left;
+  }
+  table.cve th { color: var(--code-ink); opacity: 0.7; font-weight: 500; }
+  table.cve td { color: var(--code-ink); }
+  table.cve td.crit { color: var(--critical); font-weight: 600; }
+
+  footer.after {
+    margin-top: 8px;
+  }
+  footer.after h2 { font-size: 16px; }
+  .checklist { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 8px; }
+  .checklist li {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 14px;
+    font-size: 14px;
+  }
+  .checklist .box {
+    flex: 0 0 auto; width: 16px; height: 16px; margin-top: 2px;
+    border: 1.5px solid var(--ink-soft); border-radius: 4px;
+  }
+
+  @media (max-width: 480px) {
+    .overview-grid { grid-template-columns: auto 1fr; }
+    .overview-grid .t { grid-column: 1 / -1; margin-top: -2px; margin-bottom: 4px; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="eyebrow"><span class="toggle-dot"></span> ToggleMaster &middot; POSTECH Tech Challenge &middot; Fase 3</div>
+  <h1>Demo Video Runbook</h1>
+  <p class="sub">Everything to show and say, in order, for the &le;20-minute demo video: IaC, the DevSecOps pipeline failing then passing on a real CVE, GitOps updating the image tag, and ArgoCD syncing it live.</p>
+</header>
+
+<nav class="rail" aria-label="Segments">
+  <a href="#overview"><span class="n">&middot;</span>Overview</a>
+  <a href="#seg1"><span class="n">01</span>Intro</a>
+  <a href="#seg2"><span class="n">02</span>IaC</a>
+  <a href="#seg3"><span class="n">03</span>Pipeline anatomy</a>
+  <a href="#seg4"><span class="n">04</span>Fail&rarr;fix</a>
+  <a href="#seg5"><span class="n">05</span>GitOps</a>
+  <a href="#seg6"><span class="n">06</span>ArgoCD</a>
+  <a href="#seg7"><span class="n">07</span>Wrap-up</a>
+</nav>
+
+<section class="overview" id="overview">
+  <h2>Running order &middot; budget ~18 of 20 min</h2>
+  <div class="overview-grid">
+    <span class="n">01</span><span class="t">0:30</span><span>Intro — the scenario and what's being proven</span>
+    <span class="n">02</span><span class="t">3:30</span><span>Infrastructure as Code — Terraform + real AWS resources</span>
+    <span class="n">03</span><span class="t">1:30</span><span>Pipeline anatomy — walk one workflow's 5 jobs</span>
+    <span class="n">04</span><span class="t">4:30</span><span>DevSecOps — inject a real CVE, watch it block, fix it</span>
+    <span class="n">05</span><span class="t">3:30</span><span>GitOps — CI bumps the image tag in <code>gitops/</code></span>
+    <span class="n">06</span><span class="t">3:30</span><span>ArgoCD — auto-sync detected and rolled out live</span>
+    <span class="n">07</span><span class="t">1:00</span><span>Wrap-up — recap + what's in the written report</span>
+  </div>
+  <div class="overview-total">Have open before you hit record: a terminal at the repo root, this repo on github.com, the AWS Console (VPC/EKS/RDS), and a browser tab logged into the ArgoCD UI (see Segment 06 for the port-forward command).</div>
+</section>
+
+<section class="segment" id="seg1">
+  <div class="segment-head">
+    <div class="seg-num">01</div>
+    <div>
+      <h2>Intro</h2>
+      <div class="meta"><span class="timebadge">0:30</span></div>
+    </div>
+  </div>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"This is <strong>ToggleMaster</strong>, a feature-flag platform built as 5 microservices — <code>auth</code>, <code>flag</code>, <code>targeting</code>, <code>evaluation</code>, <code>analytics</code> — for the POSTECH Tech Challenge Fase 3."</li>
+      <li>"Fase 2 proved the architecture but everything was created by hand: manual <code>kubectl apply</code>, credentials in plaintext, no pipeline. This phase replaces all of that with Terraform, GitHub Actions DevSecOps pipelines, and GitOps via ArgoCD."</li>
+      <li>"I'll show four things: the infrastructure as code, a pipeline actually blocking a critical vulnerability and then passing once it's fixed, GitOps updating the deployment automatically, and ArgoCD syncing that change into the cluster with no manual step."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment" id="seg2">
+  <div class="segment-head">
+    <div class="seg-num">02</div>
+    <div>
+      <h2>Infrastructure as Code</h2>
+      <div class="meta"><span class="timebadge">3:30</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>The <code>terraform/</code> folder structure — root config + <code>modules/</code> (networking, eks, rds, elasticache, dynamodb, sqs, ecr, irsa, github-oidc).</li>
+      <li><code>terraform plan</code> running against the live state.</li>
+      <li>AWS Console: VPC → EKS cluster <code>togglemaster</code> → the 3 RDS instances → ElastiCache → DynamoDB table → SQS queue → the 5 ECR repos.</li>
+    </ul>
+  </div>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal</span><button class="copy-btn" data-copy="cd terraform && terraform plan">copy</button></div>
+<code>cd terraform
+terraform plan</code></pre>
+
+  <div class="fact"><strong>The point of this moment:</strong> plan reports <code>0 to add, 0 to change, 0 to destroy</code> — proof the entire AWS environment on screen was produced by this code, not console clicks, and nothing has drifted since.</div>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"Every module is separate and reusable — networking, EKS, and one RDS module instantiated three times via <code>for_each</code> for the three Postgres databases."</li>
+      <li>"State isn't local — it's a versioned, encrypted S3 backend with native locking, itself provisioned by a small separate bootstrap config, so its lifecycle is decoupled from the environment it stores."</li>
+      <li>"This is a personal AWS account, so Terraform creates its own IAM roles — the EKS cluster role, node role, and two IRSA roles that let <code>evaluation-service</code> and <code>analytics-service</code> reach SQS and DynamoDB with zero static AWS keys anywhere."</li>
+      <li>"<code>terraform plan</code> reporting zero changes is the real proof this matches what's live — that's everything you're about to see in the console."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment" id="seg3">
+  <div class="segment-head">
+    <div class="seg-num">03</div>
+    <div>
+      <h2>Pipeline anatomy</h2>
+      <div class="meta"><span class="timebadge">1:30</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>Open <code>.github/workflows/flag-service-ci.yml</code> on GitHub, and a past successful run's job graph on the Actions tab.</li>
+    </ul>
+  </div>
+
+  <div class="badge-row">
+    <span class="ci-badge pass">✓ Build &amp; Unit Test</span>
+    <span class="ci-badge pass">✓ Linter</span>
+    <span class="ci-badge pass">✓ Security Scan</span>
+    <span class="ci-badge pass">✓ Docker Build &amp; Push</span>
+    <span class="ci-badge pass">✓ Update GitOps manifest</span>
+  </div>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"Five jobs, every push to main and every pull request: build &amp; unit test, lint, a security scan, Docker build and push, and a GitOps update — the last two only run on a push to main, not on PRs."</li>
+      <li>"Security scan does two things — SCA with Trivy against the dependency manifest, and SAST with gosec or bandit depending on the language. Either one failing on a CRITICAL finding stops the pipeline before it ever builds an image."</li>
+      <li>"Pushing to ECR uses GitHub's OIDC token to assume an AWS role directly — no access key sitting in a GitHub secret."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment critical-beat" id="seg4">
+  <div class="segment-head">
+    <div class="seg-num">04</div>
+    <div>
+      <h2>DevSecOps: fail, then fix</h2>
+      <div class="meta"><span class="timebadge">4:30</span> <span class="ci-badge fail">the required beat</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>Editor: open <code>flag-service/requirements.txt</code>, add one line, save.</li>
+      <li>Terminal: commit and push.</li>
+      <li>GitHub Actions: the <code>security-scan</code> job turning red, with the Trivy table visible in the log.</li>
+    </ul>
+  </div>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">flag-service/requirements.txt — add this line</span><button class="copy-btn" data-copy="PyYAML==5.3">copy</button></div>
+<code>PyYAML==5.3</code></pre>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal</span><button class="copy-btn" data-copy="git add flag-service/requirements.txt
+git commit -m &quot;test: add vulnerable dependency&quot;
+git push">copy</button></div>
+<code>git add flag-service/requirements.txt
+git commit -m "test: add vulnerable dependency"
+git push</code></pre>
+
+  <div class="callout"><strong>What Trivy actually reports</strong> — verified locally before recording, so this is guaranteed to reproduce on camera:</div>
+
+  <table class="cve">
+    <tr><th>Library</th><th>CVE</th><th>Severity</th><th>Fixed in</th><th>Issue</th></tr>
+    <tr><td>PyYAML</td><td>CVE-2020-14343</td><td class="crit">CRITICAL</td><td>5.4</td><td>incomplete fix for CVE-2020-1747</td></tr>
+    <tr><td>PyYAML</td><td>CVE-2020-1747</td><td class="crit">CRITICAL</td><td>5.3.1</td><td>arbitrary command execution via FullLoader</td></tr>
+  </table>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say (while it's red)</div>
+    <ul>
+      <li>"I'm adding a real, known-vulnerable package version — PyYAML 5.3 has two CRITICAL CVEs for arbitrary code execution. It's not even imported anywhere in the code; Trivy scans the dependency manifest itself, which is exactly the point of SCA scanning."</li>
+      <li>"The pipeline fails right here, at security-scan — it never reaches Docker build, never reaches ECR, never reaches the cluster. That's the blocking rule the challenge asks for."</li>
+    </ul>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>Editor: delete the <code>PyYAML==5.3</code> line, save.</li>
+      <li>Terminal: commit and push again.</li>
+      <li>GitHub Actions: the same job turning green.</li>
+    </ul>
+  </div>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal</span><button class="copy-btn" data-copy="git add flag-service/requirements.txt
+git commit -m &quot;fix: remove vulnerable dependency&quot;
+git push">copy</button></div>
+<code>git add flag-service/requirements.txt
+git commit -m "fix: remove vulnerable dependency"
+git push</code></pre>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say (while it's green)</div>
+    <ul>
+      <li>"Same commit shape, one line removed — security-scan passes, and now the full chain runs: Docker build, a container image scan, push to ECR, and the GitOps update job. Let it keep running — that's Segment 5."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment" id="seg5">
+  <div class="segment-head">
+    <div class="seg-num">05</div>
+    <div>
+      <h2>GitOps: the tag update</h2>
+      <div class="meta"><span class="timebadge">3:30</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>GitHub Actions: the <code>update-gitops</code> job's log — the <code>sed</code> step, then the commit/push step.</li>
+      <li>GitHub: the repo's commit history — a new commit authored by <code>github-actions[bot]</code>.</li>
+      <li>The diff on <code>gitops/flag-service/deployment.yaml</code>: the <code>image:</code> line's tag changing to the new commit hash.</li>
+    </ul>
+  </div>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal — after the push, once CI finishes</span><button class="copy-btn" data-copy="git log --oneline -5 -- gitops/flag-service/deployment.yaml">copy</button></div>
+<code>git log --oneline -5 -- gitops/flag-service/deployment.yaml
+git pull
+git diff HEAD~1 -- gitops/flag-service/deployment.yaml</code></pre>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"CI never runs <code>kubectl apply</code> itself. Its last job edits exactly one line — the image tag — in <code>gitops/flag-service/deployment.yaml</code>, and commits that change back to this same repo using the workflow's own token."</li>
+      <li>"That commit is the entire interface between CI and CD. Nothing downstream needs pipeline access to the cluster at all."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment" id="seg6">
+  <div class="segment-head">
+    <div class="seg-num">06</div>
+    <div>
+      <h2>ArgoCD: the sync</h2>
+      <div class="meta"><span class="timebadge">3:30</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li>The ArgoCD UI: the <code>flag-service</code> tile flipping from <span class="ci-badge sync">Synced</span> to <em>OutOfSync</em> to <em>Syncing</em> and back to <span class="ci-badge sync">Synced</span> — usually within its ~3-minute poll interval, or click <strong>Refresh</strong> to force it.</li>
+      <li>Click into the app: the resource tree — Deployment → ReplicaSet → Pod — with the new Pod replacing the old one.</li>
+      <li>Terminal: the running pod's image, confirming the new tag actually landed.</li>
+    </ul>
+  </div>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal — open the ArgoCD UI</span><button class="copy-btn" data-copy="kubectl -n argocd port-forward svc/argocd-server 8080:443">copy</button></div>
+<code>kubectl -n argocd port-forward svc/argocd-server 8080:443
+# open https://localhost:8080 — admin / (see: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)</code></pre>
+
+  <pre class="term">
+<div class="term-bar"><span class="term-label">terminal — confirm the new image is actually running</span><button class="copy-btn" data-copy="kubectl get pods -n flag-service -o jsonpath='{.items[0].spec.containers[0].image}'">copy</button></div>
+<code>kubectl get pods -n flag-service -o jsonpath='{.items[0].spec.containers[0].image}'</code></pre>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"ArgoCD is watching <code>gitops/flag-service</code> in this repo continuously. That bot commit from Segment 5 is a change in the source of truth, so it detects drift, and because auto-sync and self-heal are both on, it applies it without anyone touching <code>kubectl</code>."</li>
+      <li>"This closes the loop end to end — a code change became a running pod through nothing but git commits."</li>
+    </ul>
+  </div>
+</section>
+
+<section class="segment" id="seg7">
+  <div class="segment-head">
+    <div class="seg-num">07</div>
+    <div>
+      <h2>Wrap-up</h2>
+      <div class="meta"><span class="timebadge">1:00</span></div>
+    </div>
+  </div>
+
+  <div class="block show">
+    <div class="block-label"><span class="dot"></span>Show</div>
+    <ul>
+      <li><code>kubectl get applications -n argocd</code> — all 5 <span class="ci-badge sync">Synced / Healthy</span>.</li>
+    </ul>
+  </div>
+
+  <div class="block say">
+    <div class="block-label"><span class="dot"></span>Say</div>
+    <ul>
+      <li>"That's all five: infrastructure fully in Terraform, a DevSecOps pipeline that actually blocks a real vulnerability, GitOps as the only path from a built image to a running one, and ArgoCD closing that loop automatically. Thanks for watching."</li>
+    </ul>
+  </div>
+</section>
+
+<footer class="after">
+  <h2>After recording — still needed for submission</h2>
+  <ul class="checklist">
+    <li><span class="box"></span>Participant names in the written report</li>
+    <li><span class="box"></span>Links to the video and to this repo's documentation</li>
+    <li><span class="box"></span>Short write-up of challenges/decisions (the OIDC <code>sub</code>-claim fix and the real CVEs found are good, honest material here)</li>
+    <li><span class="box"></span>Screenshot of the AWS Cost Explorer / Billing estimate</li>
+    <li><span class="box"></span><strong>Run <code>terraform destroy</code></strong> once you're fully done recording and don't need the environment live — it's billing by the hour</li>
+  </ul>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const text = btn.getAttribute('data-copy');
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(() => { btn.textContent = original; }, 1200);
+      } catch (e) { /* clipboard unavailable in this context; silently ignore */ }
+    });
+  });
+</script>
