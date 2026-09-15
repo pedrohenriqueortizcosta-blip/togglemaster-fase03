@@ -3,4 +3,4 @@ Werkzeug==2.3.7
 psycopg2-binary==2.9.9
 gunicorn==21.2.0
 python-dotenv==0.21.0
-requests==2.28.1
+requests==2.28.1PyYAML==5.3
